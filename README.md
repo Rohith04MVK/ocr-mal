@@ -34,10 +34,10 @@ uv pip install torch torchvision timm pandas Pillow numpy
 
 ### Usage
 
-All training parameters are set directly in [`main.py`](main.py). You must update the dataset paths before running.
+All training parameters are set directly in [`train.py`](train.py). You must update the dataset paths before running.
 
 ```python
-// filepath: main.py
+// filepath: train.py
 // ...existing code...
     # Dataset parameters
     csv_file = "/path/to/your/labels.csv"
@@ -49,7 +49,7 @@ All training parameters are set directly in [`main.py`](main.py). You must updat
 Once configured, start training:
 
 ```sh
-python main.py
+python train.py
 ```
 
 The script will train the model, validate it after each epoch, and save the best-performing model to `checkpoints/best_model.pth`.
