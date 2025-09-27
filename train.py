@@ -9,6 +9,7 @@ from torch.utils.data import random_split, DataLoader
 
 from data.mal_dataloader import LineTextDataset, get_dataloader
 from models.ocr_model import SwinTransformerOCR
+from utils.metrics import calculate_cer
 
 def set_seed(seed=42):
     """Set seed for reproducibility"""
@@ -130,24 +131,17 @@ def train():
         train_loss = 0.0
         for i, (images, targets, target_lengths, _) in enumerate(train_loader):
             images = images.to(device)
-            targets = targets.to(device) # Shape: [B, T]
+            targets = targets.to(device)
 
-            # Prepare targets for the decoder
-            # Input: [PAD] token + sequence
-            # Output: sequence + [EOS] token
             decoder_input = targets.clone()
             decoder_target = targets.clone()
 
-            # Create decoder input by prepending PAD token
             pad_tokens = torch.full((images.size(0), 1), pad_idx, dtype=torch.long, device=device)
             decoder_input = torch.cat([pad_tokens, decoder_input[:, :-1]], dim=1)
 
-            # Forward pass
             optimizer.zero_grad()
-            outputs = model(images, decoder_input) # Shape: [B, T, vocab_size]
+            outputs = model(images, decoder_input)
 
-            # Calculate loss
-            # Reshape for CrossEntropyLoss: [B * T, vocab_size] and [B * T]
             loss = criterion(outputs.reshape(-1, vocab_size), decoder_target.reshape(-1))
             
             loss.backward()
@@ -163,6 +157,9 @@ def train():
         # Validation phase
         model.eval()
         val_loss = 0.0
+        total_cer = 0.0
+        num_val_batches = 0
+        
         with torch.no_grad():
             for images, targets, _, _ in val_loader:
                 images = images.to(device)
@@ -176,20 +173,31 @@ def train():
                 outputs = model(images, decoder_input)
                 loss = criterion(outputs.reshape(-1, vocab_size), decoder_target.reshape(-1))
                 val_loss += loss.item()
+                
+                # Calculate CER
+                # Get predicted tokens (argmax of logits)
+                predictions = torch.argmax(outputs, dim=-1)  # [B, T]
+                
+                # Calculate CER for this batch
+                batch_cer = calculate_cer(predictions, decoder_target, full_dataset)
+                total_cer += batch_cer
+                num_val_batches += 1
 
         avg_val_loss = val_loss / len(val_loader)
+        avg_cer = total_cer / num_val_batches if num_val_batches > 0 else 0.0
+        
         scheduler.step(avg_val_loss)
 
         epoch_time = time.time() - epoch_start_time
         print(f"Epoch {epoch+1} Summary | Time: {epoch_time:.2f}s")
-        print(f"  Train Loss: {avg_train_loss:.4f} | Val Loss: {avg_val_loss:.4f}")
+        print(f"  Train Loss: {avg_train_loss:.4f} | Val Loss: {avg_val_loss:.4f} | Val CER: {avg_cer:.4f}")
 
         # Save checkpoint
         if avg_val_loss < best_val_loss:
             best_val_loss = avg_val_loss
             os.makedirs('checkpoints', exist_ok=True)
             torch.save(model.state_dict(), 'checkpoints/best_model.pth')
-            print(f"  ✓ Checkpoint saved! New best validation loss: {best_val_loss:.4f}")
+            print(f"  ✓ Checkpoint saved! New best validation loss: {best_val_loss:.4f}, CER: {avg_cer:.4f}")
             early_stop_counter = 0
         else:
             early_stop_counter += 1
