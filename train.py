@@ -33,9 +33,9 @@ def train():
     print(f"Using device: {device}")
 
     # Dataset parameters
-    csv_file = "/home/rohithkb/workspace/ocr-data-gen/output/labels.csv"
-    base_path = "/home/rohithkb/workspace/ocr-data-gen/output/images"
-    alphabet_file = "/home/rohithkb/workspace/ocr-data-gen/output/alphabets.txt"
+    csv_file = "labels.csv"
+    base_path = "images"
+    alphabet_file = "alphabets.txt"
     img_height = 128
     img_width = 768
     batch_size = 16 # Adjust based on your GPU memory
