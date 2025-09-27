@@ -34,17 +34,58 @@ uv pip install torch torchvision timm pandas Pillow numpy
 
 ### Usage
 
-All training parameters are set directly in [`train.py`](train.py). You must update the dataset paths before running.
+The training script now supports command-line arguments for easy configuration:
 
-```python
-// filepath: train.py
-// ...existing code...
-    # Dataset parameters
-    csv_file = "/path/to/your/labels.csv"
-    base_path = "/path/to/your/images"
-    alphabet_file = "/path/to/your/alphabets.txt"
-// ...existing code...
+```sh
+# Basic usage with default parameters
+python train.py
+
+# Custom dataset paths
+python train.py --csv-file /path/to/labels.csv --base-path /path/to/images --alphabet-file /path/to/alphabets.txt
+
+# Custom training parameters
+python train.py --batch-size 32 --learning-rate 2e-4 --num-epochs 100
+
+# Use grayscale images
+python train.py --grayscale
+
+# Full example with custom settings
+python train.py \
+    --csv-file data/my_labels.csv \
+    --base-path data/my_images \
+    --alphabet-file data/my_alphabets.txt \
+    --batch-size 32 \
+    --img-height 64 \
+    --img-width 512 \
+    --num-epochs 100 \
+    --learning-rate 2e-4
 ```
+
+#### Available Arguments:
+
+**Dataset Arguments:**
+- `--csv-file`: Path to CSV file containing image-text pairs (default: `labels.csv`)
+- `--base-path`: Base path to images directory (default: `images`)
+- `--alphabet-file`: Path to alphabet file (default: `alphabets.txt`)
+
+**Image Processing:**
+- `--img-height`: Image height for resizing (default: `128`)
+- `--img-width`: Image width for resizing (default: `768`)
+- `--grayscale`: Use grayscale images instead of RGB
+
+**Training Parameters:**
+- `--batch-size`: Training batch size (default: `16`)
+- `--num-epochs`: Number of training epochs (default: `50`)
+- `--learning-rate`: Learning rate (default: `1e-4`)
+- `--weight-decay`: Weight decay (default: `1e-4`)
+- `--patience`: Early stopping patience (default: `10`)
+
+**Model Parameters:**
+- `--embed-dim`: Swin transformer embedding dimension (default: `96`)
+- `--d-model`: Transformer decoder model dimension (default: `256`)
+- `--max-seq-len`: Maximum sequence length (default: `100`)
+
+Use `python train.py --help` to see all available options.
 
 Once configured, start training:
 
